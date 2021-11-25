@@ -1,3 +1,3 @@
-from zentree.interface.interface import Interface
+from zentree.interface.interface import Zentree
 
-__all__ = ["Interface"]
+__all__ = ["Zentree"]

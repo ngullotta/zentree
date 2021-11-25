@@ -1,4 +1,4 @@
-from zentree.interface import Interface
+from zentree.interface import Zentree
 
 __version__ = "0.1.0"
-__all__ = ["Interface"]
+__all__ = ["Zentree"]
