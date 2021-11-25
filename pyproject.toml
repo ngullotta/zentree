@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "zentree"
+version = "0.1.0"
+description = ""
+authors = ["Nikolaus Gullotta <nikolaus.gullotta@protonmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pytube = "^11.0.1"
+npyscreen = "^4.10.5"
+python-mpv = "^0.5.2"
+requests = "^2.26.0"
+cachetools = "^4.2.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+black = "^21.9b0"
+flake8 = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 79
+target-version = ['py310']
