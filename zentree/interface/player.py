@@ -10,12 +10,13 @@ from npyscreen import (
     BoxTitle,
     ButtonPress,
     Pager,
-    SimpleGrid,
     Slider,
     TitleMultiSelect,
     TitleText,
 )
+from zentree.interface.controls import TransportBox, VolumeBox
 from zentree.interface.form import RedrawingForm
+from zentree.interface.tree import Arboretum
 from zentree.players.youtube import YouTubePlayer
 
 
@@ -67,8 +68,8 @@ class PomodoroTimer(ButtonPress):
 class TreeDisplay(Pager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        with open(Path("./trees/basic.txt")) as fp:
-            self.values = fp.read().split("\n")
+        # with open(Path("./trees/basic.txt")) as fp:
+        #     self.values = fp.read().split("\n")
 
     def jujItUp(self):
         for i, value in enumerate(self.values):
@@ -114,86 +115,7 @@ class Tree(BoxTitle):
         return super().resize()
 
 
-class SearchForm(TitleText):
-    def afterEdit(self):
-        print(self)
-
-
-class VolumeSlider(Slider):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.add_handlers(
-            {
-                "=": self.h_increase,
-                "_": self.h_decrease,
-                KEY_SLEFT: self.h_decrease,
-                KEY_SRIGHT: self.h_increase,
-            }
-        )
-
-    def handle_input(self, _input):
-        return super().handle_input(_input)
-
-    def h_decrease(self, inp):
-        if self.parent.player.volume <= 0:
-            return
-        if inp == KEY_SLEFT or chr(inp) == "_":
-            self.parent.player.volume -= self.step * 10
-        else:
-            self.parent.player.volume -= self.step
-        self.value = self.parent.player.volume
-
-    def h_increase(self, inp):
-        if self.parent.player.volume >= 100:
-            return
-        if inp == KEY_SRIGHT or chr(inp) == "+":
-            self.parent.player.volume += self.step * 10
-        else:
-            self.parent.player.volume += self.step
-        self.value = self.parent.player.volume
-
-
-class ControlGrid(SimpleGrid):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.set_grid_values_from_flat_list(["⏮", "⏸", "⏭", "🔀"])
-        self.add_handlers({" ": self.handler})
-
-    @property
-    def current_value(self):
-        row = self.selected_row()
-        idx = self.edit_cell[1]
-        return row[idx]
-
-    def handler(self, __):
-        match self.current_value:
-            case "⏮":
-                if self.parent.current_pos > 4:
-                    self.parent.player.seek(-self.parent.current_pos)
-                    return
-                self.parent.player.playlist_prev(mode="force")
-            case "⏸":
-                self.parent.player.pause = True
-                self.set_grid_values_from_flat_list(
-                    ["⏮", "▶", "⏭", "🔀"], reset_cursor=False
-                )
-            case "▶":
-                self.parent.player.pause = False
-                self.set_grid_values_from_flat_list(
-                    ["⏮", "⏸", "⏭", "🔀"], reset_cursor=False
-                )
-            case "⏭":
-                self.parent.player.playlist_next(mode="force")
-            case "🔀":
-                self.parent.player.playlist_shuffle()
-                self.parent.player.playlist_next(mode="force")
-            case _:
-                pass
-
-
 class Player(RedrawingForm):
-    HELP = "ASDF"
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.name: str = "Player: Not Playing"
@@ -219,12 +141,15 @@ class Player(RedrawingForm):
             self.player.observe_property(prop, func)
 
         self.juj = Thread(
-            target=self.every, args=(5, self.tree.entry_widget.jujItUp)
+            target=self.every,
+            args=(1, self.tree.entry_widget.zhuzhItUp),
         )
         self.juj.start()
 
         for sig in [SIGINT]:
             signal(sig, self.shutdown)
+
+        self.onRealized()
 
     def find_previous_editable(self, *args):
         if (self.editw + 1) == len(self._widgets__):
@@ -300,13 +225,19 @@ class Player(RedrawingForm):
 
         return " ".join(parts)
 
+    def onRealized(self) -> None:
+        for w in self._widgets__:
+            callback = getattr(w, "onParentRealized", None)
+            if callback is not None:
+                callback()
+
     def create(self):
-        self.controls = self.add(ControlGrid, max_height=1)
-        self.slider = self.add(VolumeSlider, max_height=1, value=100)
+        self.controls = self.add(TransportBox, max_height=3)
+        self.slider = self.add(VolumeBox, max_height=3, value=100)
         self.search = self.add(TitleText, name="Search", max_height=1)
         self.results = self.add(TitleMultiSelect, hidden=True, max_height=10)
         self.timer = self.add(PomodoroTimer, name="Start Timer")
-        self.tree = self.add(Tree, name="Arboretum")
+        self.tree = self.add(Arboretum)
 
     def afterEditing(self):
         if query := self.search.get_value():
