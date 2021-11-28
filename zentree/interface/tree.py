@@ -21,8 +21,7 @@ class Arboretum(Pager):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.specials = []
-        with open(Path("./trees/basic.txt")) as fp:
-            self.values = fp.read().split("\n")
+        self.tree = []
 
     @property
     def age(self) -> int:
@@ -40,8 +39,20 @@ class Arboretum(Pager):
     def clamp(value: int, lower: int, upper: int) -> int:
         return max(lower, min(value, upper))
 
-    def superImposeTree(self) -> None:
-        pass
+    def superImposeTree(self, _type: str) -> None:
+        if len(self.tree) == 0:
+            with open(Path(f"./trees/{_type}.txt")) as fp:
+                self.tree = fp.read().split("\n")
+
+        for i, line in enumerate(self.tree):
+            new: List[str] = []
+            for bc, tc in zip(
+                list(self.values[i]), list(line.center(self.width - 1))
+            ):
+                new.append(bc)
+                if tc != " ":
+                    new[-1] = tc
+            self.values[i] = "".join(new)
 
     def advanceSpecials(self) -> None:
         # Special objects specify which row it's in, it's start and end
@@ -81,6 +92,7 @@ class Arboretum(Pager):
 
     def generateSpecialObjects(self) -> None:
         self.advanceSpecials()
+        self.superImposeTree("basic")
 
         if len(self.specials) >= 5:
             return
@@ -123,7 +135,6 @@ class Arboretum(Pager):
                         star: str = choice(self.stars)
                         chars[j : j + len(star)] = list(star)
                     continue
-                chars[j] = " "
             self.values[i] = "".join(chars)
 
     def reset(self) -> None:
@@ -132,6 +143,7 @@ class Arboretum(Pager):
         self.generateBackground()
         self.specials = []
         self.generateSpecialObjects()
+        self.superImposeTree("basic")
         self.addGrass()
 
     def addGrass(self) -> None:
