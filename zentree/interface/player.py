@@ -16,7 +16,7 @@ from npyscreen import (
 )
 from zentree.interface.controls import TransportBox, VolumeBox
 from zentree.interface.form import RedrawingForm
-from zentree.interface.tree import Arboretum
+from zentree.interface.tree import ArboretumBox
 from zentree.players.youtube import YouTubePlayer
 
 
@@ -142,7 +142,7 @@ class Player(RedrawingForm):
 
         self.juj = Thread(
             target=self.every,
-            args=(1, self.tree.entry_widget.zhuzhItUp),
+            args=(1, self.tree.entry_widget.generateSpecialObjects),
         )
         self.juj.start()
 
@@ -237,7 +237,7 @@ class Player(RedrawingForm):
         self.search = self.add(TitleText, name="Search", max_height=1)
         self.results = self.add(TitleMultiSelect, hidden=True, max_height=10)
         self.timer = self.add(PomodoroTimer, name="Start Timer")
-        self.tree = self.add(Arboretum)
+        self.tree = self.add(ArboretumBox)
 
     def afterEditing(self):
         if query := self.search.get_value():
