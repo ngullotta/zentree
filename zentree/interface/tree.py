@@ -48,8 +48,8 @@ class TreeDisplay(Pager):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.specials = []
-        # with open(Path("./trees/basic.txt")) as fp:
-        #     self.values = fp.read().split("\n")
+        with open(Path("./trees/basic.txt")) as fp:
+            self.values = fp.read().split("\n")
 
     @property
     def age(self) -> int:
@@ -63,9 +63,12 @@ class TreeDisplay(Pager):
     def chance(percent: float) -> bool:
         return (uniform(0, 1) * 100) > (100 - percent)
 
+    def superImposeTree(self) -> None:
+        pass
+
     def zhuzhItUp(self) -> None:
         if len(self.specials) < 5:
-            if self.chance(25):
+            if self.chance(35):
                 special: str = choice(self.special)
 
                 s: str = choice(self.values)
@@ -92,18 +95,24 @@ class TreeDisplay(Pager):
 
         for row, coords, original in self.specials:
             start, end = coords[0], coords[1]
-            if start - 1 <= 0:
-                idx = self.specials.index((row, coords, original))
-                del self.specials[idx]
-                self.values[row] = original
-                continue
             string: str = self.values[row]
             decomposed = list(string)
-            decomposed[start - 1 : end - 1] = decomposed[start:end]
+            if start > 0:
+                decomposed[start - 1 : end - 1] = decomposed[start:end]
+            else:
+                decomposed[0] = original[0]
             decomposed[end] = original[end]
+
             coords[0] -= 1
             coords[1] -= 1
             self.values[row] = "".join(decomposed)
+
+            if start < 0 and end < 0:
+                try:
+                    idx = self.specials.index((row, coords, original))
+                    del self.specials[idx]
+                except (ValueError):
+                    pass
 
     def generateBackground(self):
         for i, row in enumerate(self.values):
