@@ -63,12 +63,18 @@ class Arboretum(Pager):
 
     def advanceSpecials(self) -> None:
         # Special objects specify which row it's in, it's start and end
-        # coordinates, and the original string value
+        # coordinates, the original string value, and the special
+        # character set. @ToDo: This should be a class
         for row, coords, original, special in self.specials:
-            # The actual string "row" in the pager
+            # The actual "row" in the pager
+            #     [[a b c d e f g]
+            # --> [h i j k l m n]
+            #     [o p q r s t u]]
             string: str = self.values[row]
 
             # Start and ends guaranteed to be 0 <= x <= len(string)
+            # even if the actual coordinates have gone into the
+            # negatives.
             start: int = self.clamp(coords[0], 0, len(string))
             end: int = self.clamp(coords[1], 0, len(string))
 
@@ -81,16 +87,14 @@ class Arboretum(Pager):
                 decomposed[start - 1 : end] = list(special)
                 decomposed[end] = original[end]
             # Shift the special object down in sequential order by
-            # inversing end coord and then setting end char back to
-            # original end char
+            # inversing end start coordinate and then setting end char
+            # back to the original end char
             elif end > 0:
-                print(0, end)
                 decomposed[0:end] = list(special)[-end:]
                 decomposed[end] = original[end]
             # We're done here, this shouldn't be rendered anymore,
             # delete it and move on
             elif start == 0 and end == 0:
-                # This special object is no longer being drawn, delete it
                 decomposed[0] = original[0]
                 idx: int = self.specials.index(
                     (row, coords, original, special)
