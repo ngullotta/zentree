@@ -237,6 +237,12 @@ class Player(RedrawingForm):
         self.search = self.add(TitleText, name="Search", max_height=1)
         self.results = self.add(TitleMultiSelect, hidden=True, max_height=10)
         self.timer = self.add(PomodoroTimer, name="Start Timer")
+        self.ager = self.add(ButtonPress, name="Advance Age")
+
+        def advanceTreeAge():
+            self.tree.entry_widget.age = self.tree.entry_widget.age + 1
+
+        self.ager.whenPressed = advanceTreeAge
         self.tree = self.add(ArboretumBox)
 
     def afterEditing(self):

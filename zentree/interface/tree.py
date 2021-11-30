@@ -1,5 +1,5 @@
 from enum import IntEnum, auto
-from operator import delitem
+from math import ceil
 from pathlib import Path
 from random import choice, randint, uniform
 from typing import List
@@ -22,14 +22,19 @@ class Arboretum(Pager):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.specials = []
+        self._age = 0
         self.tree = []
+        self.tree_type = "p1"
 
     @property
     def age(self) -> int:
-        return 0
+        return self._age
 
     @age.setter
     def age(self, value: int) -> int:
+        self._age = value
+        self.tree_type = f"p{self.clamp(ceil(self._age/5), 1, 9)}"
+        self.reset()
         return self.age
 
     @staticmethod
@@ -40,9 +45,9 @@ class Arboretum(Pager):
     def clamp(value: int, lower: int, upper: int) -> int:
         return max(lower, min(value, upper))
 
-    def superImposeTree(self, _type: str) -> None:
+    def superImposeTree(self) -> None:
         if len(self.tree) == 0:
-            with open(Path(f"./trees/{_type}.txt")) as fp:
+            with open(Path(f"./trees/{self.tree_type}.txt")) as fp:
                 self.tree = fp.read().split("\n")
 
         tcopy = self.tree.copy()
@@ -110,7 +115,7 @@ class Arboretum(Pager):
 
     def generateSpecialObjects(self) -> None:
         self.advanceSpecials()
-        self.superImposeTree("basic")
+        self.superImposeTree()
 
         if len(self.specials) >= len(self.values[0:-1]):
             return
@@ -140,7 +145,7 @@ class Arboretum(Pager):
                 )
             )
 
-        self.superImposeTree("basic")
+        self.superImposeTree()
 
     def generateBackground(self) -> None:
         for i, row in enumerate(self.values):
@@ -154,6 +159,8 @@ class Arboretum(Pager):
             self.values[i] = "".join(chars)
 
     def reset(self) -> None:
+        self.values = []
+        self.tree = []
         self.anchorBottom()
         self.centerValues()
         self.generateBackground()
@@ -161,7 +168,7 @@ class Arboretum(Pager):
             self.values[row] = original
         self.specials = []
         self.generateSpecialObjects()
-        self.superImposeTree("basic")
+        self.superImposeTree()
         self.addGrass()
 
     def addGrass(self) -> None:
@@ -180,6 +187,10 @@ class ArboretumBox(BoxTitle):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+    def update(self, clear: bool = True) -> None:
+        self.name = f"Arboretum: Age [{self.entry_widget.age}]"
+        return super().update(clear=clear)
 
     def resize(self) -> None:
         self.entry_widget.width = self.width - 3
