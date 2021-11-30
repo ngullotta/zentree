@@ -95,7 +95,7 @@ class Arboretum(Pager):
             # We're done here, this shouldn't be rendered anymore,
             # delete it and move on
             elif start == 0 and end == 0:
-                decomposed[0] = original[0]
+                decomposed = list(original)
                 idx: int = self.specials.index(
                     (row, coords, original, special)
                 )
@@ -112,38 +112,35 @@ class Arboretum(Pager):
         self.advanceSpecials()
         self.superImposeTree("basic")
 
-        if len(self.specials) >= 5:
+        if len(self.specials) >= len(self.values[0:-1]):
             return
 
-        if self.chance(15):
+        if self.chance(5):
             special: str = choice(self.special)
 
-            s: str = choice(self.values)
+            s: str = choice(self.values[0:-1])
             cs = str(s)
             idx = self.values.index(s)
 
-            no_spawn = False
-            if idx + 1 == len(self.values):
-                no_spawn = True
-
             for row, _, __, ___ in self.specials:
                 if row == idx:
-                    no_spawn = True
+                    return
 
-            if not no_spawn:
-                start = randint(0, self.width - len(special))
-                new = list(s)
-                new[start : start + len(special)] = list(special)
-                self.values[idx] = "".join(new)
+            start = randint(0, self.width - (len(special) + 1))
+            new = list(s)
+            new[start : start + len(special)] = list(special)
+            self.values[idx] = "".join(new)
 
-                self.specials.append(
-                    (
-                        idx,
-                        [start, (start + len(special) - 1), Direction.RIGHT],
-                        cs,
-                        special,
-                    )
+            self.specials.append(
+                (
+                    idx,
+                    [start, (start + len(special) - 1), Direction.RIGHT],
+                    cs,
+                    special,
                 )
+            )
+
+        self.superImposeTree("basic")
 
     def generateBackground(self) -> None:
         for i, row in enumerate(self.values):
@@ -160,6 +157,8 @@ class Arboretum(Pager):
         self.anchorBottom()
         self.centerValues()
         self.generateBackground()
+        for row, _, original, __ in self.specials:
+            self.values[row] = original
         self.specials = []
         self.generateSpecialObjects()
         self.superImposeTree("basic")
