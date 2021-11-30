@@ -1,4 +1,5 @@
 from curses import KEY_SLEFT, KEY_SRIGHT
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from random import choice, random
 from signal import SIGINT, signal
@@ -41,6 +42,10 @@ class PomodoroTimer(ButtonPress):
         self.timer = Timer(target=self.every, args=(1, self.tick))
         self.timer.start()
 
+        self.counter = 0
+        self.bt = 0
+        self._break = datetime.utcnow()
+
     def every(self, seconds: int, fn: callable) -> None:
         while not self.exit_flag.wait(timeout=seconds):
             if self.active_flag.is_set():
@@ -49,9 +54,32 @@ class PomodoroTimer(ButtonPress):
                 except (Exception):
                     pass
 
+    def pomodoro(self):
+        self.counter += 1
+        self.name = "Break started"
+        self.parent.tree.entry_widget.age = (
+            self.parent.tree.entry_widget.age + 1
+        )
+        if self.counter > 3:
+            self.counter = 0
+            self.bt = 25
+        else:
+            self.bt = 10
+        self._break = datetime.utcnow() + timedelta(seconds=self.bt * 60)
+
     def tick(self):
-        self.time += 1
-        self.name = f"{self.time}s"
+        if self.bt > 0:
+            delta = self._break - datetime.utcnow()
+            if datetime.utcnow() >= self._break:
+                self._break = datetime.utcfromtimestamp(0)
+                self.bt = 0
+            self.name = f"{timedelta(seconds=delta.seconds)} P={self.counter}"
+        else:
+            self.time += 1
+            self.name = f"{timedelta(seconds=self.time)} P={self.counter}"
+            if self.time >= 20 * 60:
+                self.time = 0
+                self.pomodoro()
         return self.time
 
     def whenPressed(self):
@@ -238,11 +266,6 @@ class Player(RedrawingForm):
         self.results = self.add(TitleMultiSelect, hidden=True, max_height=10)
         self.timer = self.add(PomodoroTimer, name="Start Timer")
         self.ager = self.add(ButtonPress, name="Advance Age")
-
-        def advanceTreeAge():
-            self.tree.entry_widget.age = self.tree.entry_widget.age + 1
-
-        self.ager.whenPressed = advanceTreeAge
         self.tree = self.add(ArboretumBox)
 
     def afterEditing(self):
