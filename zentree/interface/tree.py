@@ -24,6 +24,7 @@ class Arboretum(Pager):
         self.specials = []
         self._age = 0
         self.tree = []
+        self.counter = 0
         self.tree_type = "p1"
 
     @property
@@ -105,6 +106,7 @@ class Arboretum(Pager):
                     (row, coords, original, special)
                 )
                 del self.specials[idx]
+                self.counter += 1
 
             # Decrement coordinates
             coords[0] -= 1

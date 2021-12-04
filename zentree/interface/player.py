@@ -1,20 +1,11 @@
-from curses import KEY_SLEFT, KEY_SRIGHT
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
-from random import choice, random
 from signal import SIGINT, signal
 from threading import Event, Thread
 from traceback import StackSummary
 from typing import Any, Union
 
-from npyscreen import (
-    BoxTitle,
-    ButtonPress,
-    Pager,
-    Slider,
-    TitleMultiSelect,
-    TitleText,
-)
+from npyscreen import ButtonPress, TitleMultiSelect, TitleText
 from zentree.interface.controls import TransportBox, VolumeBox
 from zentree.interface.form import RedrawingForm
 from zentree.interface.tree import ArboretumBox
@@ -91,56 +82,6 @@ class PomodoroTimer(ButtonPress):
             self.active_flag.clear()
             self.time = 0
             self.name = "Start Timer"
-
-
-class TreeDisplay(Pager):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # with open(Path("./trees/basic.txt")) as fp:
-        #     self.values = fp.read().split("\n")
-
-    def jujItUp(self):
-        for i, value in enumerate(self.values):
-            new = []
-            for j, c in enumerate(value):
-                if c in [" ", "*", "+", ".", "~", ">", "<"]:
-                    if random() < 0.02:
-                        new.append(choice([" ", "*", "."]))
-                        if random() < 0.05:
-                            new[-1] = "+"
-                        if random() < 0.005:
-                            starc = choice(["~~>", "<~~"])
-                            new[-len(starc) :] = list(starc)
-                    else:
-                        new.append(" ")
-                    continue
-                new.append(c)
-            self.values[i] = "".join(new)
-        self.values[-1] = "~" * self.width
-        self.reset_display_cache()
-        self.update()
-
-    def centerValues(self):
-        self.values = [l.center(self.width - 1) for l in self.values]
-
-    def anchorBottom(self):
-        pad = self.height - len(self.values)
-        if pad > 0:
-            for _ in range(pad):
-                self.values.insert(0, "\n")
-
-
-class Tree(BoxTitle):
-    _contained_widget = TreeDisplay
-
-    def resize(self):
-        self.name = "Arboretum [Age: 30]"
-        self.entry_widget.width = self.width - 3
-        self.entry_widget.height = self.height - 2
-        self.entry_widget.anchorBottom()
-        self.entry_widget.centerValues()
-        self.entry_widget.jujItUp()
-        return super().resize()
 
 
 class Player(RedrawingForm):
