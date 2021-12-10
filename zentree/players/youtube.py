@@ -1,45 +1,50 @@
-from typing import Tuple
+import logging
+from typing import Tuple, TypeVar
 
-from cachetools import TTLCache, cached
+from cachetools import cached
 from pytube import Search, YouTube
 from pytube.exceptions import LiveStreamError, PytubeError
-from zentree.players.player import Player
+from pytube.streams import Stream
+from zentree.players.cache import QueryCache
+from zentree.players.player import QueryablePlayer
 from zentree.utils import Singleton
 
+YTP = TypeVar("YTP", bound="YouTubePlayer")
 
-class YouTubePlayer(Player, Singleton):
+
+class YouTubePlayer(QueryablePlayer, Singleton):
     base = "https://www.youtube.com/watch"
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.results_cache = {}
+    logger = logging.getLogger("player.youtube")
 
-    def _get_playable_url(self, res: YouTube) -> str:
+    __cache = QueryCache(maxsize=0x400, ttl=60 * 15)
+
+    def _get_playable_url(self: YTP, result: YouTube) -> str:
         try:
-            audio = res.streams.get_audio_only()
+            audio: Stream = result.streams.get_audio_only()
             if audio is not None:
                 return audio.url
         except (LiveStreamError) as ex:
             return self.make_url(v=ex.video_id) or ""
         except (PytubeError) as ex:
-            print(ex)
+            self.logger.error("Error fetching playable URL:", ex)
         return ""
 
-    def search(self, query: str) -> Tuple[str, str]:
-        for res in Search(query).results:
-            yield res.title, self._get_playable_url(res)
+    def search(self: YTP, query: str) -> Tuple[str, str]:
+        if results := Search(query).results:
+            for res in results:
+                yield res.title, self._get_playable_url(res)
 
-    @cached(cache=TTLCache(maxsize=0x400, ttl=60 * 15))
-    def query(self, query: str) -> dict:
-        res = {title: url for title, url in self.search(query)}
-        self.results_cache.update(res)
-        return res
+    @cached(__cache)
+    def query(self: YTP, query: str) -> dict[str, str]:
+        return {title: url for title, url in self.search(query)}
 
-    def play_first_found(self, query: str):
+    def play_first_found(self: YTP, query: str) -> None:
         for _, v in self.query(query).items():
             self.play(v)
+            break
 
-    def play_from_results(self, key: str) -> None:
-        url = self.results_cache.get(key)
-        if url is not None:
-            self.play(url)
+    def play_from_results(self: YTP, key: str) -> None:
+        if last := __cache.fetchlast() is not None:
+            if url := last.get(key) is not None:
+                self.play(url)

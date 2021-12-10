@@ -2,7 +2,7 @@ from enum import IntEnum, auto
 from math import ceil
 from pathlib import Path
 from random import choice, randint, uniform
-from typing import List
+from typing import Any, List, TypeVar
 
 from npyscreen import BoxTitle, Pager
 
@@ -12,6 +12,9 @@ class Direction(IntEnum):
     LEFT = auto()
 
 
+AB = TypeVar("AB", bound="Arboretum")
+
+
 class Arboretum(Pager):
     grass: str = "~"
 
@@ -19,8 +22,8 @@ class Arboretum(Pager):
 
     special: List[str] = ["*━━----"]
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self: AB, screen: Any, **kwargs: dict[str, Any]) -> None:
+        super().__init__(screen, **kwargs)
         self.specials = []
         self._age = 0
         self.tree = []
@@ -28,11 +31,11 @@ class Arboretum(Pager):
         self.tree_type = "p1"
 
     @property
-    def age(self) -> int:
+    def age(self: AB) -> int:
         return self._age
 
     @age.setter
-    def age(self, value: int) -> int:
+    def age(self: AB, value: int) -> int:
         self._age = value
         self.tree_type = f"p{self.clamp(ceil(self._age/5), 1, 9)}"
         self.reset()
@@ -46,7 +49,7 @@ class Arboretum(Pager):
     def clamp(value: int, lower: int, upper: int) -> int:
         return max(lower, min(value, upper))
 
-    def superImposeTree(self) -> None:
+    def superImposeTree(self: AB) -> None:
         if len(self.tree) == 0:
             with open(Path(f"./trees/{self.tree_type}.txt")) as fp:
                 self.tree = fp.read().split("\n")
@@ -67,7 +70,7 @@ class Arboretum(Pager):
             del tcopy[-1]
             self.values[i] = "".join(new)
 
-    def advanceSpecials(self) -> None:
+    def advanceSpecials(self: AB) -> None:
         # Special objects specify which row it's in, it's start and end
         # coordinates, the original string value, and the special
         # character set. @ToDo: This should be a class
@@ -115,7 +118,7 @@ class Arboretum(Pager):
             # Re-join decomposed values back to a string
             self.values[row] = "".join(decomposed)
 
-    def generateSpecialObjects(self) -> None:
+    def generateSpecialObjects(self: AB) -> None:
         self.advanceSpecials()
         self.superImposeTree()
 
@@ -149,7 +152,7 @@ class Arboretum(Pager):
 
         self.superImposeTree()
 
-    def generateBackground(self) -> None:
+    def generateBackground(self: AB) -> None:
         for i, row in enumerate(self.values):
             chars: list[str] = list(row)
             for j, c in enumerate(chars):
@@ -160,7 +163,7 @@ class Arboretum(Pager):
                     continue
             self.values[i] = "".join(chars)
 
-    def reset(self) -> None:
+    def reset(self: AB) -> None:
         self.values = []
         self.tree = []
         self.anchorBottom()
@@ -173,28 +176,28 @@ class Arboretum(Pager):
         self.superImposeTree()
         self.addGrass()
 
-    def addGrass(self) -> None:
+    def addGrass(self: AB) -> None:
         self.values[-1] = self.grass * self.width
 
-    def centerValues(self) -> None:
+    def centerValues(self: AB) -> None:
         self.values = [line.center(self.width - 1) for line in self.values]
 
-    def anchorBottom(self) -> None:
+    def anchorBottom(self: AB) -> None:
         for _ in range(self.height - len(self.values)):
             self.values.insert(0, " ")
+
+
+ABB = TypeVar("ABB", bound="ArboretumBox")
 
 
 class ArboretumBox(BoxTitle):
     _contained_widget = Arboretum
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def update(self, clear: bool = True) -> None:
+    def update(self: ABB, clear: bool = True) -> None:
         self.name = f"Arboretum: Age [{self.entry_widget.age}]"
         return super().update(clear=clear)
 
-    def resize(self) -> None:
+    def resize(self: ABB) -> None:
         self.entry_widget.width = self.width - 3
         self.entry_widget.height = self.height - 2
         self.entry_widget.reset()

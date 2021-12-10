@@ -1,87 +1,15 @@
-from datetime import datetime, timedelta
 from pathlib import Path
 from signal import SIGINT, signal
-from threading import Event, Thread
+from threading import Thread
 from traceback import StackSummary
 from typing import Any, Union
 
 from npyscreen import ButtonPress, TitleMultiSelect, TitleText
 from zentree.interface.controls import TransportBox, VolumeBox
 from zentree.interface.form import RedrawingForm
+from zentree.interface.timer import PomodoroTimer
 from zentree.interface.tree import ArboretumBox
 from zentree.players.youtube import YouTubePlayer
-
-
-class Timer(Thread):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.stop = Event()
-
-    def run(self):
-        while not self.stop.is_set():
-            super().run()
-
-
-class PomodoroTimer(ButtonPress):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.time = 0
-        self.active_flag: Event = Event()
-        self.active_flag.set()
-        self.exit_flag: Event = Event()
-
-        self.timer = Timer(target=self.every, args=(1, self.tick))
-        self.timer.start()
-
-        self.counter = 0
-        self.bt = 0
-        self._break = datetime.utcnow()
-
-    def every(self, seconds: int, fn: callable) -> None:
-        while not self.exit_flag.wait(timeout=seconds):
-            if self.active_flag.is_set():
-                try:
-                    fn()
-                except (Exception):
-                    pass
-
-    def pomodoro(self):
-        self.counter += 1
-        self.name = "Break started"
-        self.parent.tree.entry_widget.age = (
-            self.parent.tree.entry_widget.age + 1
-        )
-        if self.counter > 3:
-            self.counter = 0
-            self.bt = 25
-        else:
-            self.bt = 10
-        self._break = datetime.utcnow() + timedelta(seconds=self.bt * 60)
-
-    def tick(self):
-        if self.bt > 0:
-            delta = self._break - datetime.utcnow()
-            if datetime.utcnow() >= self._break:
-                self._break = datetime.utcfromtimestamp(0)
-                self.bt = 0
-            self.name = f"{timedelta(seconds=delta.seconds)} P={self.counter}"
-        else:
-            self.time += 1
-            self.name = f"{timedelta(seconds=self.time)} P={self.counter}"
-            if self.time >= 20 * 60:
-                self.time = 0
-                self.pomodoro()
-        return self.time
-
-    def whenPressed(self):
-        if self.timer.stop.is_set():
-            self.timer.stop.clear()
-            self.active_flag.set()
-        else:
-            self.timer.stop.set()
-            self.active_flag.clear()
-            self.time = 0
-            self.name = "Start Timer"
 
 
 class Player(RedrawingForm):
@@ -207,7 +135,13 @@ class Player(RedrawingForm):
         self.results = self.add(TitleMultiSelect, hidden=True, max_height=10)
         self.timer = self.add(PomodoroTimer, name="Start Timer")
         self.ager = self.add(ButtonPress, name="Advance Age")
+
         self.tree = self.add(ArboretumBox)
+
+        def ageFunc():
+            self.tree.entry_widget.age += 1
+
+        self.ager.whenPressed = ageFunc
 
     def afterEditing(self):
         if query := self.search.get_value():
