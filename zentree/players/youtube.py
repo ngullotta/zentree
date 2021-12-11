@@ -17,7 +17,7 @@ class YouTubePlayer(QueryablePlayer, Singleton):
 
     logger = logging.getLogger("player.youtube")
 
-    __cache = QueryCache(maxsize=0x400, ttl=60 * 15)
+    _cache = QueryCache(maxsize=0x400, ttl=60 * 15)
 
     def _get_playable_url(self: YTP, result: YouTube) -> str:
         try:
@@ -35,7 +35,7 @@ class YouTubePlayer(QueryablePlayer, Singleton):
             for res in results:
                 yield res.title, self._get_playable_url(res)
 
-    @cached(__cache)
+    @cached(_cache)
     def query(self: YTP, query: str) -> dict[str, str]:
         return {title: url for title, url in self.search(query)}
 
@@ -45,6 +45,6 @@ class YouTubePlayer(QueryablePlayer, Singleton):
             break
 
     def play_from_results(self: YTP, key: str) -> None:
-        if last := __cache.fetchlast() is not None:
-            if url := last.get(key) is not None:
+        if (last := self._cache.fetchlast()) is not None:
+            if (url := last.get(key)) is not None:
                 self.play(url)
