@@ -1,8 +1,12 @@
-from typing import Any
+from typing import Any, Dict, Hashable, List, TypeVar
+
+S = TypeVar("S", bound="Singleton")
 
 
 class Singleton(object):
-    def __new__(cls, *args, **kwargs) -> Any:
+    def __new__(
+        cls: Any, *args: List[Any], **kwargs: Dict[Hashable, Any]
+    ) -> Any:
         instance: Any = cls.__dict__.get("__instance__")
         if instance is not None:
             return instance
@@ -10,5 +14,5 @@ class Singleton(object):
         instance.init(*args, **kwargs)
         return instance
 
-    def init(self, *args, **kwargs) -> None:
+    def init(self: S, *args, **kwargs) -> None:
         pass

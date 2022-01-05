@@ -5,6 +5,7 @@ from random import choice, randint, uniform
 from typing import Any, List, TypeVar
 
 from npyscreen import BoxTitle, Pager
+from npyscreen.wgwidget import Widget
 
 
 class Direction(IntEnum):
@@ -191,10 +192,10 @@ ABB = TypeVar("ABB", bound="ArboretumBox")
 
 
 class ArboretumBox(BoxTitle):
-    _contained_widget = Arboretum
+    _contained_widget: Widget = Arboretum
 
     def update(self: ABB, clear: bool = True) -> None:
-        self.name = f"Arboretum: Age [{self.entry_widget.age}]"
+        self.name: str = f"Arboretum: Age [{self.entry_widget.age}]"
         return super().update(clear=clear)
 
     def resize(self: ABB) -> None:
