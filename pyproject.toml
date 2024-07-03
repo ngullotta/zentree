@@ -11,6 +11,7 @@ npyscreen = "^4.10.5"
 python-mpv = "^0.5.2"
 requests = "^2.26.0"
 cachetools = "^4.2.4"
+numpy = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

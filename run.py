@@ -1,4 +1,10 @@
-from zentree import Zentree
+from zentree import Screen
 
 if __name__ == "__main__":
-    Zentree().run()
+    try:
+        tree = Screen()
+        tree.start()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        tree.stop()
