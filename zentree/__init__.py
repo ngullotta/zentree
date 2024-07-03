@@ -1,14 +1,42 @@
 import curses
 import numpy as np
 from functools import reduce
+import copy
+from random import choice, randint, uniform
 
 from pathlib import Path
 
 class Screen:
+    grass: str = "~"
+
+    stars = ["*", "+", ".", "'"]
+
+    special = ["*━━----"]
     def __init__(self) -> None:
         self.stdscr = None
         self.rows, self.cols = 0, 0
         self.layers = []
+        self.age = 0
+    
+    @staticmethod
+    def chance(percent: float) -> bool:
+        return (uniform(0, 1) * 100) > (100 - percent)
+
+    def make_background_layer(self, stars: bool = True) -> np.ndarray:
+        output = np.array(
+            [
+                [' ' for i in range(self.cols)] 
+                for i in range(self.rows)
+            ]
+        )
+
+        for row in output:
+            for i in range(0, len(row)):
+                if self.chance(2.5):
+                    row[i] = choice(self.stars)
+
+        return output
+
 
     def make_tree_layer(self, height: int = 1) -> np.ndarray:
         cr, cc = self.rows // 2, self.cols // 2
@@ -27,21 +55,16 @@ class Screen:
             for i, line in enumerate(treelines[::-1]):
                 if not line:
                     continue
-                start = cc - len(line)
-                for c in line:
-                    output[row][start] = c
-                    start += 1
+                beginning = cc - (len(line) // 2)
+                for j, c in enumerate(line):
+                    output[row][beginning + j] = c
                 row -= 1
         return output
 
     def initialize_layers(self):
         for layer in [
-            np.array([
-                    ['-' for i in range(self.cols)] 
-                    for i in range(self.rows)
-                ]
-            ),
-            self.make_tree_layer(9)
+            self.make_background_layer(),
+            self.make_tree_layer(self.age)
         ]:
             self.layers.append(layer)
 
@@ -49,14 +72,15 @@ class Screen:
         self.stdscr = curses.initscr()
         self.rows, self.cols = self.stdscr.getmaxyx()
 
-        self.initialize_layers()
-
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(True)
+        self.initialize_layers()
 
         while True:
-            blit = self.layers[0]
+            # Tree layer
+            self.layers[1] = self.make_tree_layer(self.age)
+            blit = copy.deepcopy(self.layers[0])
             for layer in self.layers[1:]:
                 blit = np.where(layer != ' ', layer, blit)
             for i in range(self.rows):
@@ -67,12 +91,13 @@ class Screen:
                         char = ord(' ')
                     self.stdscr.addch(i, j, char)
             c = self.stdscr.getch()
-            # if c != ord('q'):
-                # self.stdscr.addch(c)
             if c == ord('q'):
                 break  # Exit the while loop
-            elif c == curses.KEY_HOME:
-                x = y = 0
+            elif c == ord(' '):
+                if self.age < 9:
+                    self.age += 1
+                else:
+                    self.age = 0
 
     def stop(self) -> None:
         curses.nocbreak()
