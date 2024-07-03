@@ -37,6 +37,24 @@ class Screen:
 
         return output
 
+    def make_special_layer(self)  -> np.ndarray:
+        output = np.array(
+            [
+                [' ' for i in range(self.cols)] 
+                for i in range(self.rows)
+            ]
+        )
+
+        for row in output:
+            for i in range(0, len(row)):
+                if self.chance(1):
+                    special = choice(self.special)[::-1]
+                    if len(special) + i > len(row):
+                        continue
+                    for j, c in enumerate(special):
+                        row[i + j] = c
+
+        return output
 
     def make_tree_layer(self, height: int = 1) -> np.ndarray:
         cr, cc = self.rows // 2, self.cols // 2
@@ -64,6 +82,7 @@ class Screen:
     def initialize_layers(self):
         for layer in [
             self.make_background_layer(),
+            self.make_special_layer(),
             self.make_tree_layer(self.age)
         ]:
             self.layers.append(layer)
@@ -79,8 +98,8 @@ class Screen:
 
         while True:
             # Tree layer
-            self.layers[1] = self.make_tree_layer(self.age)
-            blit = copy.deepcopy(self.layers[0])
+            self.layers[2] = self.make_tree_layer(self.age)
+            blit = self.layers[0]
             for layer in self.layers[1:]:
                 blit = np.where(layer != ' ', layer, blit)
             for i in range(self.rows):
@@ -96,6 +115,7 @@ class Screen:
             elif c == ord(' '):
                 if self.age < 9:
                     self.age += 1
+                    self.layers[1] = np.roll(self.layers[1], 1)
                 else:
                     self.age = 0
 
