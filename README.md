@@ -1,8 +1,8 @@
 # Zentree
-I'll fill this out later lmao
+Just a fun terminal toy that grows a tree against a background of a starry 
+night with celestial objects
 
-Here's a gif
+# About
+Interface is all ncurses, "blit" is all done with numpy ndarray parallaxing
 
-![Zentree.JIF](https://i.imgur.com/CPOVxaa.gif)
-
-![Zentree2.JIF](https://i.imgur.com/mWoGqZG.gif)
+# Example
