@@ -6,3 +6,4 @@ night with celestial objects
 Interface is all ncurses, "blit" is all done with numpy ndarray parallaxing
 
 # Example
+![Demo](https://youtu.be/K-Oi8zY0XkI)
